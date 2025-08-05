@@ -1692,9 +1692,7 @@ class Scheduler(
 
         # Whether to run the profiler
         self._profile_batch_predicate(batch)
-        logger.info(f"DP rank now is {self.dp_rank}")
         if self.dp_rank_for_slowdown is not None and self.dp_rank_for_slowdown == self.dp_rank:
-            logger.info(f"DP rank matched for slowdown {self.dp_rank}")
             if self.forward_sleep_time is not None:
                 logger.info(f"Scheduler.run_batch sleep {self.forward_sleep_time}s on DP{self.dp_rank}")
                 time.sleep(self.forward_sleep_time)
