@@ -1692,9 +1692,10 @@ class Scheduler(
 
         # Whether to run the profiler
         self._profile_batch_predicate(batch)
-        if self.forward_sleep_time is not None:
-            logger.info(f"Scheduler.run_batch sleep {self.forward_sleep_time}s")
-            time.sleep(self.forward_sleep_time)
+        if self.dp_rank_for_slowdown is not None and self.dp_rank_for_slowdown == self.dp_rank:
+            if self.forward_sleep_time is not None:
+                logger.info(f"Scheduler.run_batch sleep {self.forward_sleep_time}s on {self.dp_rank}")
+                time.sleep(self.forward_sleep_time)
 
         # Run forward
         if self.is_generation:
@@ -2401,7 +2402,6 @@ class Scheduler(
             t = None
         self.forward_sleep_time = t
         if drs is not None and drs <= 0:
-            
             drs = None
         self.dp_rank_for_slowdown = drs
         return SlowDownReqOutput()
