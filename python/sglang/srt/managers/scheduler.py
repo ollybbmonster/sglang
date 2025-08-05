@@ -244,7 +244,8 @@ class Scheduler(
                 self.dp_size,
             )
         )
-
+        # The running decoding batch for continuous batching
+        self.running_batch: ScheduleBatch = ScheduleBatch(reqs=[], batch_is_full=False)
         # Init inter-process communication
         context = zmq.Context(2)
         self.idle_sleeper = None
@@ -404,8 +405,7 @@ class Scheduler(
 
         # Init running status
         self.waiting_queue: List[Req] = []
-        # The running decoding batch for continuous batching
-        self.running_batch: ScheduleBatch = ScheduleBatch(reqs=[], batch_is_full=False)
+
         # The current forward batch
         self.cur_batch: Optional[ScheduleBatch] = None
         # The last forward batch
