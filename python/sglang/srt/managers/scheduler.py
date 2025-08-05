@@ -244,6 +244,8 @@ class Scheduler(
                 self.dp_size,
             )
         )
+        # Init running status
+        self.waiting_queue: List[Req] = []
         # The running decoding batch for continuous batching
         self.running_batch: ScheduleBatch = ScheduleBatch(reqs=[], batch_is_full=False)
         # Init inter-process communication
@@ -402,9 +404,6 @@ class Scheduler(
 
         # Init memory pool and cache
         self.init_memory_pool_and_cache()
-
-        # Init running status
-        self.waiting_queue: List[Req] = []
 
         # The current forward batch
         self.cur_batch: Optional[ScheduleBatch] = None
