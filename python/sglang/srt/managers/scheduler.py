@@ -97,6 +97,8 @@ from sglang.srt.managers.io_struct import (
     UpdateWeightFromDiskReqInput,
     UpdateWeightsFromDistributedReqInput,
     UpdateWeightsFromTensorReqInput,
+    WorkerPayloadStatus,
+    DPWorkerPayloadStatus
 )
 from sglang.srt.managers.mm_utils import init_embedding_cache
 from sglang.srt.managers.schedule_batch import (
@@ -242,7 +244,10 @@ class Scheduler(
                 self.dp_size,
             )
         )
-
+        # Init running status
+        self.waiting_queue: List[Req] = []
+        # The running decoding batch for continuous batching
+        self.running_batch: ScheduleBatch = ScheduleBatch(reqs=[], batch_is_full=False)
         # Init inter-process communication
         context = zmq.Context(2)
         self.idle_sleeper = None
@@ -258,6 +263,14 @@ class Scheduler(
             self.send_to_tokenizer = get_zmq_socket(
                 context, zmq.PUSH, port_args.tokenizer_ipc_name, False
             )
+            if server_args.load_balance_method == "shortest_queue":
+                logger.info(f"shortest queue zmq on {self.dp_rank}")
+                self.send_to_dp_controller = get_zmq_socket(
+                    context, zmq.PUSH, port_args.worker_workload_status_ipc_name, False
+                )
+
+                self.report_thread = threading.Thread(target=self._report_workload_status_thread)
+                self.report_thread.start()
             if server_args.skip_tokenizer_init:
                 # Directly send to the TokenizerManager
                 self.send_to_detokenizer = get_zmq_socket(
@@ -392,10 +405,6 @@ class Scheduler(
         # Init memory pool and cache
         self.init_memory_pool_and_cache()
 
-        # Init running status
-        self.waiting_queue: List[Req] = []
-        # The running decoding batch for continuous batching
-        self.running_batch: ScheduleBatch = ScheduleBatch(reqs=[], batch_is_full=False)
         # The current forward batch
         self.cur_batch: Optional[ScheduleBatch] = None
         # The last forward batch
@@ -2439,6 +2448,23 @@ class Scheduler(
             logger.warning(f"session id {session_id} does not exist, cannot delete.")
         else:
             del self.sessions[session_id]
+
+    def _report_workload_status_thread(self):
+        while True:
+            try:
+                self.send_to_dp_controller.send_pyobj(
+                    DPWorkerPayloadStatus(
+                        dp_rank=self.dp_rank,
+                        status=WorkerPayloadStatus(
+                            running_reqs=len(self.running_batch.reqs) if self.running_batch else 0,
+                            queued_reqs=len(self.waiting_queue)
+                        )
+                    )
+                )
+            except zmq.ZMQError as e:
+                logger.warn(f'failed to report workload status, ignore, e: {e}')
+            finally:
+                time.sleep(self.server_args.scheduler_workload_report_interval)
 
     def get_print_prefix(self):
         prefix = ""
