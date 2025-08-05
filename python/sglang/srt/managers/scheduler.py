@@ -416,6 +416,7 @@ class Scheduler(
         if self.device == "cpu":
             self.current_stream.synchronize = lambda: None  # No-op for CPU
         self.forward_sleep_time = None
+        self.dp_rank_for_slowdown = None
 
         # Init chunked prefill
         self.chunked_prefill_size = server_args.chunked_prefill_size
@@ -2395,9 +2396,14 @@ class Scheduler(
 
     def slow_down(self, recv_req: SlowDownReqInput):
         t = recv_req.forward_sleep_time
+        drs = recv_req.dp_rank_for_slowdown
         if t is not None and t <= 0:
             t = None
         self.forward_sleep_time = t
+        if drs is not None and drs <= 0:
+            
+            drs = None
+        self.dp_rank_for_slowdown = drs
         return SlowDownReqOutput()
 
     def expert_distribution_handle(self, recv_req: ExpertDistributionReq):
