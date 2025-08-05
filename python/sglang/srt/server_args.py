@@ -134,6 +134,7 @@ class ServerArgs:
     # Data parallelism
     dp_size: int = 1
     load_balance_method: str = "round_robin"
+    scheduler_workload_report_interval: float = 1.0
 
     # Multi-node distributed serving
     dist_init_addr: Optional[str] = None
@@ -1182,6 +1183,12 @@ class ServerArgs:
                 "minimum_tokens",
             ],
         )
+        parser.add_argument(
+            "--scheduler-workload-report-interval",
+            type=float,
+            default=ServerArgs.scheduler_workload_report_interval,
+            help="The interval (in seconds) to report the workload status to the scheduler. Default to 1.0 second.",
+        )
 
         # Multi-node distributed serving
         parser.add_argument(
@@ -2123,6 +2130,8 @@ class PortArgs:
     scheduler_input_ipc_name: str
     # The ipc filename for detokenizer to receive inputs from scheduler (zmq)
     detokenizer_ipc_name: str
+    # The ipc filename for scheduler to receive workload status from worker (zmq)
+    worker_workload_status_ipc_name: str
 
     # The port for nccl initialization (torch.dist)
     nccl_port: int
@@ -2153,6 +2162,7 @@ class PortArgs:
                 tokenizer_ipc_name=f"ipc://{tempfile.NamedTemporaryFile(delete=False).name}",
                 scheduler_input_ipc_name=f"ipc://{tempfile.NamedTemporaryFile(delete=False).name}",
                 detokenizer_ipc_name=f"ipc://{tempfile.NamedTemporaryFile(delete=False).name}",
+                worker_workload_status_ipc_name=f"ipc://{tempfile.NamedTemporaryFile(delete=False).name}",
                 nccl_port=nccl_port,
                 rpc_ipc_name=f"ipc://{tempfile.NamedTemporaryFile(delete=False).name}",
                 metrics_ipc_name=f"ipc://{tempfile.NamedTemporaryFile(delete=False).name}",
@@ -2181,11 +2191,13 @@ class PortArgs:
                 scheduler_input_port = port_base + 4
             else:
                 scheduler_input_port = port_base + 4 + 1 + dp_rank
+            worker_workload_status_port = port_base + 100
 
             return PortArgs(
                 tokenizer_ipc_name=f"tcp://{dist_init_host}:{port_base}",
                 scheduler_input_ipc_name=f"tcp://{dist_init_host}:{scheduler_input_port}",
                 detokenizer_ipc_name=f"tcp://{dist_init_host}:{detokenizer_port}",
+                worker_workload_status_ipc_name=f"tcp://{dist_init_host}:{worker_workload_status_port}",
                 nccl_port=nccl_port,
                 rpc_ipc_name=f"tcp://{dist_init_host}:{rpc_port}",
                 metrics_ipc_name=f"tcp://{dist_init_host}:{metrics_ipc_name}",

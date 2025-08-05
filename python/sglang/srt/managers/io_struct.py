@@ -1119,3 +1119,14 @@ class BlockReqType(Enum):
 @dataclass
 class BlockReqInput:
     type: BlockReqType
+
+@dataclass
+class WorkerPayloadStatus:
+    running_reqs: int
+    queued_reqs: int
+
+
+@dataclass
+class DPWorkerPayloadStatus:
+    dp_rank: int
+    status: WorkerPayloadStatus
