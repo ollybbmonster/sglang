@@ -261,6 +261,7 @@ class Scheduler(
                 context, zmq.PUSH, port_args.tokenizer_ipc_name, False
             )
             if server_args.load_balance_method == "shortest_queue":
+                logger.info(f"shortest queue zmq on {self.dp_rank}")
                 self.send_to_dp_controller = get_zmq_socket(
                     context, zmq.PUSH, port_args.worker_workload_status_ipc_name, False
                 )
