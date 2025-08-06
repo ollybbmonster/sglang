@@ -264,7 +264,7 @@ class Scheduler(
                 context, zmq.PUSH, port_args.tokenizer_ipc_name, False
             )
             if server_args.load_balance_method == "shortest_queue":
-                logger.info(f"shortest queue zmq on {self.dp_rank}")
+                # logger.info(f"shortest queue zmq on {self.dp_rank}")
                 self.send_to_dp_controller = get_zmq_socket(
                     context, zmq.PUSH, port_args.worker_workload_status_ipc_name, False
                 )
@@ -1703,7 +1703,7 @@ class Scheduler(
         self._profile_batch_predicate(batch)
         if self.dp_rank_for_slowdown is not None and self.dp_rank_for_slowdown == self.dp_rank:
             if self.forward_sleep_time is not None:
-                logger.info(f"Scheduler.run_batch sleep {self.forward_sleep_time}s on DP{self.dp_rank}")
+                # logger.info(f"Scheduler.run_batch sleep {self.forward_sleep_time}s on DP{self.dp_rank}")
                 time.sleep(self.forward_sleep_time)
 
         # Run forward
