@@ -212,6 +212,9 @@ class DataParallelController:
     ):
         if not server_args.enable_dp_attention:
             logger.info(f"Launch DP{dp_rank} starting at GPU #{base_gpu_id}.")
+            logger.info(f"DP_ATTENTION TRUE")
+        else:
+            logger.info(f"DP_ATTENTION FALSE")
 
         memory_saver_adapter = TorchMemorySaverAdapter.create(
             enable=server_args.enable_memory_saver
@@ -220,13 +223,16 @@ class DataParallelController:
         scheduler_pipe_readers = []
 
         nnodes_per_tp_group = max(server_args.nnodes // server_args.pp_size, 1)
+        logger.info(f"nnodes_per_tp_group is {nnodes_per_tp_group}")
         tp_size_per_node = server_args.tp_size // nnodes_per_tp_group
+        logger.info(f"tp_size_per_node is {tp_size_per_node}")
         tp_rank_range = range(
             tp_size_per_node * (server_args.node_rank % nnodes_per_tp_group),
             tp_size_per_node * (server_args.node_rank % nnodes_per_tp_group + 1),
         )
 
         pp_size_per_node = max(server_args.pp_size // server_args.nnodes, 1)
+        logger.info(f"pp_size_per_node is {pp_size_per_node}")
         pp_rank_range = range(
             pp_size_per_node * (server_args.node_rank // nnodes_per_tp_group),
             pp_size_per_node * (server_args.node_rank // nnodes_per_tp_group + 1),
@@ -259,6 +265,7 @@ class DataParallelController:
                     + ((pp_rank % pp_size_per_node) * tp_size_per_node)
                     + (tp_rank % tp_size_per_node) * server_args.gpu_id_step
                 )
+                logger.info(f"gpu_id is {gpu_id}")
                 moe_ep_rank = tp_rank // (server_args.tp_size // server_args.ep_size)
                 proc = mp.Process(
                     target=run_scheduler_process,
