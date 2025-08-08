@@ -686,7 +686,7 @@ def _launch_subprocesses(
     if port_args is None:
         port_args = PortArgs.init_new(server_args)
         logger.info(f"{server_args=}")
-
+    logger.info(f"Launch DP 0 starting at GPU #{server_args.base_gpu_id}.")
     # If using model from www.modelscope.cn, first download the model.
     server_args.model_path, server_args.tokenizer_path = prepare_model_and_tokenizer(
         server_args.model_path, server_args.tokenizer_path
@@ -700,13 +700,16 @@ def _launch_subprocesses(
         scheduler_pipe_readers = []
 
         nnodes_per_tp_group = max(server_args.nnodes // server_args.pp_size, 1)
+        logger.info(f"DP 0: nnodes_per_tp_group is {nnodes_per_tp_group}")
         tp_size_per_node = server_args.tp_size // nnodes_per_tp_group
+        logger.info(f"DP 0: tp_size_per_node is {tp_size_per_node}")
         tp_rank_range = range(
             tp_size_per_node * (server_args.node_rank % nnodes_per_tp_group),
             tp_size_per_node * (server_args.node_rank % nnodes_per_tp_group + 1),
         )
 
         pp_size_per_node = max(server_args.pp_size // server_args.nnodes, 1)
+        logger.info(f"DP 0: pp_size_per_node is {pp_size_per_node}")
         pp_rank_range = range(
             pp_size_per_node * (server_args.node_rank // nnodes_per_tp_group),
             pp_size_per_node * (server_args.node_rank // nnodes_per_tp_group + 1),
