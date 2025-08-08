@@ -104,9 +104,11 @@ class DataParallelController:
         self.workers = [None] * server_args.dp_size
 
         if server_args.enable_dp_attention:
+            logger.info(f"DPController: dp_attention is enabled")
             dp_port_args = self.launch_dp_attention_schedulers(server_args, port_args)
             self.control_message_step = server_args.tp_size
         else:
+            logger.info(f"DPController: dp_attention is not enabled")
             dp_port_args = self.launch_dp_schedulers(server_args, port_args)
             self.control_message_step = 1
 
@@ -147,6 +149,7 @@ class DataParallelController:
         dp_port_args = []
         ready_events = []
         for dp_rank in range(server_args.dp_size):
+
             tmp_port_args = PortArgs.init_new(server_args)
             tmp_port_args.tokenizer_ipc_name = port_args.tokenizer_ipc_name
             tmp_port_args.detokenizer_ipc_name = port_args.detokenizer_ipc_name
