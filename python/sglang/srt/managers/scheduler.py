@@ -1703,7 +1703,7 @@ class Scheduler(
         self._profile_batch_predicate(batch)
         if self.dp_ranks_for_slowdown is not None and self.dp_rank in self.dp_ranks_for_slowdown:
             if self.forward_sleep_time is not None:
-                # logger.info(f"Scheduler.run_batch sleep {self.forward_sleep_time}s on DP{self.dp_rank}")
+                logger.info(f"Scheduler.run_batch sleep {self.forward_sleep_time}s on DP{self.dp_rank}")
                 time.sleep(self.forward_sleep_time)
 
         # Run forward
@@ -2417,6 +2417,8 @@ class Scheduler(
             if not dp_ranks_for_slowdown:
                 dp_ranks_for_slowdown = None
         self.dp_ranks_for_slowdown = dp_ranks_for_slowdown
+        for r in self.dp_ranks_for_slowdown:
+            logger.info(f"Slowing down rank {r}")
         return SlowDownReqOutput()
 
     def expert_distribution_handle(self, recv_req: ExpertDistributionReq):
