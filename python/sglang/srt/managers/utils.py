@@ -67,12 +67,18 @@ class DPBalanceMeta:
 
     def set_shared_onfly_info(self, data: List[Dict[int, int]]):
         self.shared_state.onfly_info = data
+        # for i in range(self.num_workers):
+        #     self.shared_state.onfly_info[i].clear()
+        #     self.shared_state.onfly_info[i].update(data[i])
 
     def get_shared_local_tokens(self) -> List[int]:
         return list(self.shared_state.local_tokens)
 
     def set_shared_local_tokens(self, data: List[int]):
         self.shared_state.local_tokens = data
+        # for i in range(self.shared_state.local_tokens):
+        #     self.shared_state.local_tokens[i].clear()
+        #     self.shared_state.local_tokens[i].update(data[i])
 
     def __getstate__(self):
         state = self.__dict__.copy()

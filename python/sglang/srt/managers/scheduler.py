@@ -425,7 +425,7 @@ class Scheduler(
         if self.device == "cpu":
             self.current_stream.synchronize = lambda: None  # No-op for CPU
         self.forward_sleep_time = None
-        self.dp_rank_for_slowdown = None
+        self.dp_ranks_for_slowdown = None
 
         # Init chunked prefill
         self.chunked_prefill_size = server_args.chunked_prefill_size
@@ -1701,7 +1701,7 @@ class Scheduler(
 
         # Whether to run the profiler
         self._profile_batch_predicate(batch)
-        if self.dp_rank_for_slowdown is not None and self.dp_rank_for_slowdown == self.dp_rank:
+        if self.dp_ranks_for_slowdown is not None and self.dp_rank in self.dp_ranks_for_slowdown:
             if self.forward_sleep_time is not None:
                 # logger.info(f"Scheduler.run_batch sleep {self.forward_sleep_time}s on DP{self.dp_rank}")
                 time.sleep(self.forward_sleep_time)
@@ -1822,7 +1822,7 @@ class Scheduler(
         )
 
     def handle_dp_balance_data(self, local_batch: ScheduleBatch):
-        def gather_dp_balance_info(holding_tokens_list) -> Union[None, List[List[int]]]:
+        def gather_dp_balance_info(holding_tokens_length) -> Union[None, List[List[int]]]:
             """gather recv_dp_balance_id_this_term and holding tokens per worker for dp balance"""
             recv_list = self.recv_dp_balance_id_this_term
             assert len(recv_list) <= 511, (
@@ -1834,7 +1834,7 @@ class Scheduler(
 
             # recv_tensor: | holding_tokens | len(recv_dp_balance_id) | recv_dp_balance_ids
             recv_tensor = torch.zeros(gather_tensor_size, dtype=torch.int32)
-            recv_tensor[0] = holding_tokens_list
+            recv_tensor[0] = holding_tokens_length
             recv_tensor[1] = len(
                 recv_list
             )  # The first element is the length of the list.
@@ -2406,13 +2406,17 @@ class Scheduler(
 
     def slow_down(self, recv_req: SlowDownReqInput):
         t = recv_req.forward_sleep_time
-        drs = recv_req.dp_rank_for_slowdown
+        dp_ranks_for_slowdown = recv_req.dp_ranks_for_slowdown
         if t is not None and t <= 0:
             t = None
         self.forward_sleep_time = t
-        if drs is not None and drs < 0:
-            drs = None
-        self.dp_rank_for_slowdown = drs
+        if dp_ranks_for_slowdown is not None:
+            if isinstance(dp_ranks_for_slowdown, int):
+                dp_ranks_for_slowdown = [dp_ranks_for_slowdown]
+            dp_ranks_for_slowdown = [rank for rank in dp_ranks_for_slowdown if rank >= 0]
+            if not dp_ranks_for_slowdown:
+                dp_ranks_for_slowdown = None
+        self.dp_ranks_for_slowdown = dp_ranks_for_slowdown
         return SlowDownReqOutput()
 
     def expert_distribution_handle(self, recv_req: ExpertDistributionReq):

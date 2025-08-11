@@ -903,7 +903,7 @@ class ResumeMemoryOccupationReqOutput:
 @dataclass
 class SlowDownReqInput:
     forward_sleep_time: Optional[float]
-    dp_rank_for_slowdown: Optional[int]
+    dp_ranks_for_slowdown: Optional[Union[int, List[int]]] = None
 
 
 @dataclass
