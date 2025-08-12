@@ -637,6 +637,7 @@ class MessageProcessingResult:
         tool_call_constraint: Optional constraint for structured tool calls
     """
 
+    texts: Union[str, List[str]]
     prompt: str
     prompt_ids: Union[str, List[int]]
     image_data: Optional[Any]

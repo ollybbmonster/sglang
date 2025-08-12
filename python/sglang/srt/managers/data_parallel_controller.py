@@ -351,7 +351,7 @@ class DataParallelController:
         # logger.info(f"dp workers {local_tokens=}, {onfly_info=}, {target_worker=}")
         self.workers[target_worker].send_pyobj(req)
 
-    def p2c_tokens_schedulaer(self, req):
+    def p2c_tokens_scheduler_push(self, req):
         with self.balance_meta.mutex:
             local_tokens = self.balance_meta.get_shared_local_tokens()
 

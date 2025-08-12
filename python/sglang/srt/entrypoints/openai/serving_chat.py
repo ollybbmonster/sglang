@@ -83,7 +83,6 @@ class OpenAIServingChat(OpenAIServingBase):
         sampling_params = self._build_sampling_params(
             request, processed_messages.stop, processed_messages.tool_call_constraint
         )
-
         # Handle single vs multiple requests
         if is_multimodal:
             prompt_kwargs = {"text": processed_messages.prompt}
@@ -91,7 +90,7 @@ class OpenAIServingChat(OpenAIServingBase):
             if isinstance(processed_messages.prompt_ids, str):
                 prompt_kwargs = {"text": processed_messages.prompt_ids}
             else:
-                prompt_kwargs = {"input_ids": processed_messages.prompt_ids}
+                prompt_kwargs = {"text": processed_messages.texts, "input_ids": processed_messages.prompt_ids}
 
         adapted_request = GenerateReqInput(
             **prompt_kwargs,
@@ -155,6 +154,7 @@ class OpenAIServingChat(OpenAIServingBase):
     ) -> MessageProcessingResult:
         """Apply Jinja chat template"""
         prompt = ""
+        texts = []
         prompt_ids = []
         openai_compatible_messages = []
         image_data = []
@@ -179,7 +179,9 @@ class OpenAIServingChat(OpenAIServingBase):
                 modalities,
             )
             openai_compatible_messages.append(processed_msg)
-
+            texts.append(processed_msg["content"])
+        if len(texts) == 1:
+            texts = texts[0]
         # Handle assistant prefix for continue_final_message
         assistant_prefix = None
         if (
@@ -234,6 +236,7 @@ class OpenAIServingChat(OpenAIServingBase):
         video_data = video_data if video_data else None
         modalities = modalities if modalities else []
         return MessageProcessingResult(
+            texts=texts,
             prompt=prompt,
             prompt_ids=prompt_ids,
             image_data=image_data,
