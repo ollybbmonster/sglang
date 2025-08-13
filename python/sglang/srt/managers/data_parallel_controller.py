@@ -371,6 +371,27 @@ class DataParallelController:
         # logger.info(f"dp workers {local_tokens=}, {onfly_info=}, {target_worker=}")
         self.workers[target_worker].send_pyobj(req)
 
+    def p2c_tokens_scheduler_pull(self, req):
+        pass
+        # [TODO]
+        # Power of 2 Choices (P2C): randomly select two workers and choose the one with minimum load
+        # def pull_load(self, worker_index: int):
+        #
+        # import random
+        # # Select two distinct random workers
+        # worker_indices = list(range(len(self.workers)))
+        # selected_indices = random.sample(worker_indices, 2)
+        # total_tokens_0 = pull_load[selected_indices[0]]
+        # total_tokens_1 = pull_load[selected_indices[1]]
+        # # Choose the worker with the minimum total tokens
+        # if total_tokens_0 <= total_tokens_1:
+        #     target_worker = selected_indices[0]
+        # else:
+        #     target_worker = selected_indices[1]
+        #
+        # # logger.info(f"dp workers {local_tokens=}, {onfly_info=}, {target_worker=}")
+        # self.workers[target_worker].send_pyobj(req)
+
     def event_loop(self):
         last_scheduler_status_check_time = time.time()
         while True:

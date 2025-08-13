@@ -90,8 +90,8 @@ class OpenAIServingChat(OpenAIServingBase):
             if isinstance(processed_messages.prompt_ids, str):
                 prompt_kwargs = {"text": processed_messages.prompt_ids}
             else:
-                prompt_kwargs = {"text": processed_messages.texts, "input_ids": processed_messages.prompt_ids}
-
+                prompt_kwargs = {"input_ids": processed_messages.prompt_ids}
+    # "text": processed_messages.texts,
         adapted_request = GenerateReqInput(
             **prompt_kwargs,
             image_data=processed_messages.image_data,
@@ -180,6 +180,7 @@ class OpenAIServingChat(OpenAIServingBase):
             )
             openai_compatible_messages.append(processed_msg)
             texts.append(processed_msg["content"])
+        print(f"{openai_compatible_messages}")
         if len(texts) == 1:
             texts = texts[0]
         # Handle assistant prefix for continue_final_message
@@ -229,7 +230,8 @@ class OpenAIServingChat(OpenAIServingBase):
 
         if is_multimodal:
             prompt = self.tokenizer_manager.tokenizer.decode(prompt_ids)
-
+        prompt = self.tokenizer_manager.tokenizer.decode(prompt_ids)
+        print(f"prompt: {prompt}")
         stop = request.stop
         image_data = image_data if image_data else None
         audio_data = audio_data if audio_data else None
