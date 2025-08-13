@@ -83,6 +83,7 @@ class OpenAIServingChat(OpenAIServingBase):
         sampling_params = self._build_sampling_params(
             request, processed_messages.stop, processed_messages.tool_call_constraint
         )
+
         # Handle single vs multiple requests
         if is_multimodal:
             prompt_kwargs = {"text": processed_messages.prompt}
@@ -90,8 +91,8 @@ class OpenAIServingChat(OpenAIServingBase):
             if isinstance(processed_messages.prompt_ids, str):
                 prompt_kwargs = {"text": processed_messages.prompt_ids}
             else:
-                prompt_kwargs = {"input_ids": processed_messages.prompt_ids}
-    # "text": processed_messages.texts,
+                prompt_kwargs = {"text": processed_messages.prompt, "input_ids": processed_messages.prompt_ids}
+
         adapted_request = GenerateReqInput(
             **prompt_kwargs,
             image_data=processed_messages.image_data,
@@ -154,7 +155,6 @@ class OpenAIServingChat(OpenAIServingBase):
     ) -> MessageProcessingResult:
         """Apply Jinja chat template"""
         prompt = ""
-        texts = []
         prompt_ids = []
         openai_compatible_messages = []
         image_data = []
@@ -179,10 +179,7 @@ class OpenAIServingChat(OpenAIServingBase):
                 modalities,
             )
             openai_compatible_messages.append(processed_msg)
-            texts.append(processed_msg["content"])
-        print(f"{openai_compatible_messages}")
-        if len(texts) == 1:
-            texts = texts[0]
+
         # Handle assistant prefix for continue_final_message
         assistant_prefix = None
         if (
@@ -194,15 +191,16 @@ class OpenAIServingChat(OpenAIServingBase):
                 openai_compatible_messages = openai_compatible_messages[:-1]
 
         try:
-            prompt_ids = self.tokenizer_manager.tokenizer.apply_chat_template(
+            prompt = self.tokenizer_manager.tokenizer.apply_chat_template(
                 openai_compatible_messages,
-                tokenize=True,
+                tokenize=False,
                 add_generation_prompt=True,
                 tools=tools,
                 **(
                     request.chat_template_kwargs if request.chat_template_kwargs else {}
                 ),
             )
+            prompt_ids = self.tokenizer_manager.tokenizer.encode(prompt)
         except Exception:
             #  This except branch will be triggered when the chosen model
             #  has a different tools input format that is not compatible
@@ -212,16 +210,18 @@ class OpenAIServingChat(OpenAIServingBase):
                 if tools
                 else None
             )
-            prompt_ids = self.tokenizer_manager.tokenizer.apply_chat_template(
+            prompt = self.tokenizer_manager.tokenizer.apply_chat_template(
                 openai_compatible_messages,
-                tokenize=True,
+                tokenize=False,
                 add_generation_prompt=True,
                 tools=tools,
                 **(
                     request.chat_template_kwargs if request.chat_template_kwargs else {}
                 ),
             )
-
+            prompt_ids = self.tokenizer_manager.tokenizer.encode(prompt)
+        print(prompt)
+        print(prompt_ids)
         if assistant_prefix:
             encoded = self.tokenizer_manager.tokenizer.encode(assistant_prefix)
             if encoded and encoded[0] == self.tokenizer_manager.tokenizer.bos_token_id:
@@ -230,15 +230,13 @@ class OpenAIServingChat(OpenAIServingBase):
 
         if is_multimodal:
             prompt = self.tokenizer_manager.tokenizer.decode(prompt_ids)
-        prompt = self.tokenizer_manager.tokenizer.decode(prompt_ids)
-        print(f"prompt: {prompt}")
+
         stop = request.stop
         image_data = image_data if image_data else None
         audio_data = audio_data if audio_data else None
         video_data = video_data if video_data else None
         modalities = modalities if modalities else []
         return MessageProcessingResult(
-            texts=texts,
             prompt=prompt,
             prompt_ids=prompt_ids,
             image_data=image_data,

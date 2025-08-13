@@ -474,9 +474,8 @@ class TokenizerManager:
     ):
         created_time = time.time()
         self.auto_create_handle_loop()
-        logger.info(f"before normalize_batch_and_arguments: {obj.input_ids}")
         obj.normalize_batch_and_arguments()
-        logger.info(f"after normalize_batch_and_arguments: {obj.input_ids}")
+
         async with self._is_updating_cond:
             await self._is_updating_cond.wait_for(lambda: not self._is_updating)
 
