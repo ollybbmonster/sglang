@@ -220,8 +220,6 @@ class OpenAIServingChat(OpenAIServingBase):
                 ),
             )
             prompt_ids = self.tokenizer_manager.tokenizer.encode(prompt)
-        print(prompt)
-        print(prompt_ids)
         if assistant_prefix:
             encoded = self.tokenizer_manager.tokenizer.encode(assistant_prefix)
             if encoded and encoded[0] == self.tokenizer_manager.tokenizer.bos_token_id:
